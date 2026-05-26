@@ -4,7 +4,8 @@
   "description": "NOMAD tabletop RPG game system as pscale blocks for bsp-mcp + federated beach",
   "type": "module",
   "scripts": {
-    "init": "echo 'TBD: implement seeding script (see scripts/init.ts)' && exit 1"
+    "init": "node scripts/init.js",
+    "init:dry": "DRY_RUN=1 node scripts/init.js"
   },
   "repository": {
     "type": "git",

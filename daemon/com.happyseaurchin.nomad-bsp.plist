@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!--
+  launchd plist template for the NOMAD synthesis daemon.
+  Deploy on macOS (Mac mini "always-on hard crab"):
+
+    1. Copy this file to ~/Library/LaunchAgents/com.happyseaurchin.nomad-bsp.plist
+    2. Edit the EnvironmentVariables block below to point at your beach and provide
+       the daemon passphrase + Anthropic API key (when LLM integration lands).
+    3. Edit the WorkingDirectory and ProgramArguments paths to match where you
+       have cloned nomad-bsp.
+    4. Load: launchctl load ~/Library/LaunchAgents/com.happyseaurchin.nomad-bsp.plist
+    5. Unload: launchctl unload ~/Library/LaunchAgents/com.happyseaurchin.nomad-bsp.plist
+    6. Check status: launchctl list | grep nomad-bsp
+    7. Logs: tail -F /tmp/nomad-bsp.out /tmp/nomad-bsp.err
+
+  Notes:
+    - RunAtLoad starts the daemon on login (and when launchctl load is run).
+    - KeepAlive restarts the daemon on crash.
+    - The daemon polls the beach every POLL_INTERVAL_MS (default 5s) and
+      synthesises whenever entity liquid is present in FRAME.
+-->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>com.happyseaurchin.nomad-bsp</string>
+
+    <key>ProgramArguments</key>
+    <array>
+        <string>/usr/local/bin/node</string>
+        <string>/Users/YOUR_USER/Projects/nomad-bsp/daemon/synthesis-daemon.js</string>
+    </array>
+
+    <key>WorkingDirectory</key>
+    <string>/Users/YOUR_USER/Projects/nomad-bsp</string>
+
+    <key>EnvironmentVariables</key>
+    <dict>
+        <key>BEACH_URL</key>
+        <string>https://beach.happyseaurchin.com</string>
+        <key>DAEMON_PASSPHRASE</key>
+        <string>YOUR_PASSPHRASE_HERE</string>
+        <key>FRAME</key>
+        <string>frame:test-scene</string>
+        <key>POLL_INTERVAL_MS</key>
+        <string>5000</string>
+        <!-- When LLM integration lands: -->
+        <!--
+        <key>ANTHROPIC_API_KEY</key>
+        <string>sk-ant-...</string>
+        -->
+    </dict>
+
+    <key>StandardOutPath</key>
+    <string>/tmp/nomad-bsp.out</string>
+    <key>StandardErrorPath</key>
+    <string>/tmp/nomad-bsp.err</string>
+
+    <key>RunAtLoad</key>
+    <true/>
+    <key>KeepAlive</key>
+    <true/>
+</dict>
+</plist>
