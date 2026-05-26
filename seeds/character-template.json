@@ -1,0 +1,3 @@
+{
+  "_": "Character template — NOMAD character generation. v0.0.1 PLACEHOLDER. Reference: onen-play/docs/nomad-character-generation-system.md. Generates a character with: character type (Poor / Average / Heroic / Exceptional / Legendary — determines starting stats curve), age category (Teen / Adult / Experienced / Veteran — determines learning point multiplier), stats network (8+ named stats each with natural 1-10 + learned 0+ + total triplets), derived life force (average of stat totals), fate points (configurable from type+age), generation metadata (locked post-confirmation). TBD: port the generation rules from onen-play docs into pscale block shape; design how a player's character-creation flow expresses through bsp() calls."
+}

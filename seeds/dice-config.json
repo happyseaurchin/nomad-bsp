@@ -1,0 +1,3 @@
+{
+  "_": "NOMAD dice — d10 exploding on 10. v0.0.1 PLACEHOLDER. Each roll is one d10; if the result is 10, roll again and add until a non-10 lands. Used in step 4 of NOMAD's resolution flow (between evaluation and interpretation). The simulator lives in the synthesis daemon (Math.random or crypto.randomInt); this block holds the configuration the daemon reads. TBD: port from onen-play; minimal config block."
+}

@@ -1,0 +1,3 @@
+{
+  "_": "Hard agent — world consistency, frame update. v0.0.1 PLACEHOLDER. The hard agent reads spatial:<world>, events:<region>, rules:<region>, and character locations to produce the per-character frame context (perception scope, available actions, applicable constraints). Runs rarely — only on scene entry, location change, or after significant events — because frame caching is critical for cost efficiency (most cycles run with the cached frame, calling only soft + medium agents). Updates witnessed:<character> based on what each character experienced. Reference design: xstream-play/blocks/xstream/hard-agent.json. TBD: adapt for bsp-mcp wire; preserve the rare-but-deep-context discipline."
+}

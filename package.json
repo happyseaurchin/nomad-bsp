@@ -1,0 +1,15 @@
+{
+  "name": "nomad-bsp",
+  "version": "0.0.1",
+  "description": "NOMAD tabletop RPG game system as pscale blocks for bsp-mcp + federated beach",
+  "type": "module",
+  "scripts": {
+    "init": "echo 'TBD: implement seeding script (see scripts/init.ts)' && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/happyseaurchin/nomad-bsp.git"
+  },
+  "author": "happyseaurchin",
+  "license": "MIT"
+}
