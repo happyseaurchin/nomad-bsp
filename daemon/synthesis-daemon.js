@@ -286,21 +286,32 @@ async function consolidate(beach, game) {
   const fold = beats.slice(0, -2);
   if (fold.length === 0) return { acted: false };
 
-  // NOTE: the room description (spatial:<world>:<room>._._) is NOT written here.
-  // It is GM-authored canon under a lock, and a pure-underscore-descent leaf is
-  // not point-addressable (trailing zeros strip — "111.00" → "111", which would
-  // clobber the whole room node). Folding settled beats into the room
-  // description is a GM/authority pass (whole-block read-modify-write of spatial
-  // with the GM secret), deliberately kept out of the open crab. The crab's
-  // durable memory is history:<name>; the authored description is the baseline.
+  // Read the room NODE (the RMW target + LLM context). The room description
+  // lives at <room>._._ inside the hidden directory. It is NOT point-writable
+  // (a pure-underscore leaf: "111.00" strips trailing zeros → "111", which
+  // clobbers the whole node). The safe write is read-modify-write of the WHOLE
+  // node at the room spindle: change only ._._, preserve the hidden directory
+  // (knowledge/refs) and the fixtures, write the node back. Position is open.
+  let roomNode = null, roomDesc = '';
+  if (game.spatial && game.room_spindle) {
+    const sp = await readBlock(beach, game.spatial);
+    let n = sp;
+    for (const ch of String(game.room_spindle)) n = (n && typeof n === 'object') ? n[ch] : undefined;
+    if (n && typeof n === 'object' && n._ && typeof n._ === 'object' && typeof n._._ === 'string') {
+      roomNode = n; roomDesc = n._._;
+    }
+  }
 
-  const system = `${typeof hardDirective === 'string' ? hardDirective : 'You are the hard tier. Consolidate settled beats into the archive.'}
+  const system = `${typeof hardDirective === 'string' ? hardDirective : 'You are the hard tier. Consolidate settled beats into memory.'}
 
 ── RETURN FORMAT ──
 Return ONLY JSON (no prose):
-{ "history_summary": "<one paragraph for the archive: what these settled beats add up to, woven into the room's setting, present tense>" }`;
+{ "room_description": "<the room's description rewritten to absorb the settled beats as lived history — prose, present tense, what is now TRUE here; keep the physical layout (hearth, bar, settle, door) since perception depends on it>", "history_summary": "<one paragraph for the archive: what these settled beats add up to>" }`;
 
-  const user = `Settled beats to fold into the archive (oldest first):
+  const user = `Current room description:
+${roomDesc || '(none available)'}
+
+Settled beats to fold in (oldest first):
 ${fold.map(f => `- ${f.beat._}`).join('\n')}
 
 Return the JSON now.`;
@@ -315,6 +326,21 @@ Return the JSON now.`;
     let slot = 1; while (hist[String(slot)] !== undefined && slot < 9) slot++;
     await writeAt(beach, game.history, String(slot), { _: String(parsed.history_summary || ''), 3: new Date().toISOString() }, game.secret);
   } catch (e) { console.warn(`  history append skipped: ${e.message}`); }
+
+  // Room-description fold — guarded RMW of the whole room node (open position).
+  // Only proceed when the node is the expected shape (hidden dir with a string
+  // description); change ONLY ._._, preserve _.1/_.2/_.3 and the fixtures; write
+  // the full node back. This cannot clobber: we never write a bare string.
+  if (roomNode && parsed.room_description && typeof parsed.room_description === 'string' && parsed.room_description.trim()) {
+    try {
+      const edited = { ...roomNode, _: { ...roomNode._, _: parsed.room_description.trim() } };
+      // sanity: still a hidden dir with a string description + at least one fixture
+      const ok = typeof edited._ === 'object' && typeof edited._._ === 'string'
+        && Object.keys(edited).some(k => /^[1-9]$/.test(k));
+      if (ok) { await writeAt(beach, game.spatial, String(game.room_spindle), edited, game.secret); }
+      else console.warn('  room-description fold skipped: edited node failed shape check');
+    } catch (e) { console.warn(`  room-description fold skipped: ${e.message}`); }
+  }
 
   // Trim solid: keep the two recent beats at positions 1,2; preserve marker.
   const trimmed = { _: solid._ };
