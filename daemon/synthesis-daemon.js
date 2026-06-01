@@ -180,8 +180,11 @@ async function resolveWindow(beach, game) {
   const pool = await readBlock(beach, game.pool);
   if (!pool) return { acted: false, reason: 'pool-missing' };
 
-  const directive = pool['9'] && pool['9']['2'];
-  if (typeof directive !== 'string') return { acted: false, reason: 'no-9.2-medium-directive' };
+  // Directives live in the game's function block (clean semantics — the pool is
+  // pure liquid now). The crab reads the MEDIUM directive at function:<game>/2.
+  const fn = game.function ? await readBlock(beach, game.function) : null;
+  const directive = fn && fn['2'];
+  if (typeof directive !== 'string') return { acted: false, reason: `no medium directive at ${game.function}/2` };
 
   const solid = (await readBlock(beach, game.solid)) || { _: `Resolved beats for ${game.name}.` };
   const marker = lastResolvedMarker(solid);
@@ -273,8 +276,9 @@ Return the JSON now.`;
 // ── Hard pass: consolidate when solid fills (directive at pool 9.3) ──
 
 async function consolidate(beach, game) {
-  const pool = await readBlock(beach, game.pool);
-  const hardDirective = pool && pool['9'] && pool['9']['3'];
+  // HARD directive at function:<game>/3 (pool is pure liquid now).
+  const fn = game.function ? await readBlock(beach, game.function) : null;
+  const hardDirective = fn && fn['3'];
   const solid = await readBlock(beach, game.solid);
   if (!solid || countBeats(solid) < (Number(process.env.SOLID_CONSOLIDATE_AT) || 7)) return { acted: false };
 

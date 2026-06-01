@@ -3,6 +3,7 @@
     {
       "name": "beaten-drum",
       "pool": "pool:beaten-drum-main",
+      "function": "function:thornwood",
       "solid": "solid:beaten-drum-main",
       "history": "history:beaten-drum-main",
       "spatial": "spatial:thornwood",
