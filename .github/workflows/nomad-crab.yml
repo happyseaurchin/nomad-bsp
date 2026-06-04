@@ -1,0 +1,42 @@
+name: nomad-crab
+
+# The GRIT resolver crab, cron-driven. Each run is ONE_SHOT: wake, resolve any
+# closeable pool windows across all configured games (write subjects' spines +
+# the pool resolution marker), then exit. Most runs no-op (no new intentions) and
+# cost only the Action minutes; the LLM is called only when a window resolves.
+#
+# Required repo secrets (Settings → Secrets and variables → Actions):
+#   BEACH_URL          e.g. https://beach.happyseaurchin.com
+#   ANTHROPIC_API_KEY  resolution synthesis (interpretive CF/SF/narrative)
+#   SECRET             the game's accumulator/table secret (e.g. the Thornwood GM secret)
+#
+# Caveats: GitHub schedules are best-effort (may lag under load) and scheduled
+# workflows pause after ~60 days of repo inactivity. Fine for play-by-post tempo;
+# for real-time use a self-hosted/launchd runner instead.
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'   # every ~10 minutes
+  workflow_dispatch: {}       # manual "Run workflow" button
+
+# Never let two resolver runs overlap (a long run + the next tick).
+concurrency:
+  group: nomad-crab
+  cancel-in-progress: false
+
+jobs:
+  resolve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Resolve closeable windows (one-shot)
+        env:
+          BEACH_URL: ${{ secrets.BEACH_URL }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          SECRET: ${{ secrets.SECRET }}
+          ONE_SHOT: '1'
+        run: node daemon/synthesis-daemon.js

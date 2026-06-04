@@ -1,89 +1,91 @@
-# Synthesis daemon
+# Synthesis daemon — the GRIT resolver ("crab")
 
-The NOMAD synthesis daemon. **v0.0.1 — functional minimum** (no LLM call yet; dummy concatenation synthesis validates the read→write loop end-to-end).
+**v0.1.** A persistent non-contributor that resolves pool windows off the players' stage, so every player turn stays pure-soft (perception in, intention out). This is the `{1,3,4}` systemic agent: **medium** resolution + **hard** consolidation, with the **identity** layer as learned-name propagation.
 
-Target deployment shape: **always-on hard crab** on a home server (e.g. the substrate author's Mac mini with a launchd plist). Per the bsp-blink-ecology agent table:
+Target deployment: **always-on hard crab** on a home server (the Mac mini, via the launchd plist). Funding: the operator's Anthropic API key. Uptime: 24/7. Independent; home-located.
 
-| Property | Value |
-|---|---|
-| Funding | user's API key |
-| Uptime | 24/7 |
-| Independence | independent |
-| Location | home server |
+## The topology (GRIT — `pscale-mcp-server/docs/protocol-grit.md`)
 
-## What v0.0.1 does
+- The crab **never contributes intentions** → it is always a valid resolver (GRIT fairness: only non-contributors resolve).
+- **Window** = pool contributions newer than the last-resolved marker (`solid:<name>/9.1`).
+- **Lazy-on-touch**: a window closes only once `window_seconds` have passed since its first contribution *and* the crab next polls.
+- **Race-tolerant**: re-reads the marker just before writing; defers if another resolver advanced it.
 
-Watches a target beach for entity liquid in a named frame. When liquid is present:
+It improves on the original GRIT in two ways (carried from the bsp-mcp build): the synthesis lands in a **separate `solid:` block** (never back in the voice-preserved pool, per `block-conventions:4.26`), and each beat carries **`visible_to`** for per-inquirer perception (GRIT had no fog-of-war).
 
-1. Reads `frame:<scene>` for all entity sub-blocks
-2. Collects each entity's liquid (at `<n>.1`)
-3. Reads `canon:<scene>` if present (for skill-pack star-refs — not used yet)
-4. **Synthesises** — currently dummy concatenation (`"<entity-desc>: <liquid text>"` lines joined). TBD: replace with a real Anthropic API call that uses the `canon` skill-pack as the prompt.
-5. Rolls the prior `solid:<scene>` content into `history:<scene>` at the next free supernest slot
-6. Writes the new synthesis as `solid:<scene>` underscore
-7. Updates each entity's `<n>.2` (solid lane) with their committed text; clears `<n>.1` (liquid)
+## The discipline is in the substrate, not this file
 
-All seven steps are pure `bsp()` over HTTP. The daemon holds no privileged authority — it writes under its own passphrase (stored as `DAEMON_PASSPHRASE` env var).
+The crab loads the room's **MEDIUM directive from `pool:<name>/9.2`** and uses it verbatim as the LLM system prompt, with the live `rules:*`, `spatial:*`, `passport:*`, and `witnessed:*` blocks appended as read-only context. The **HARD directive at `9.3`** drives consolidation. To change how resolution or consolidation behaves, **edit the substrate (9.2 / 9.3), not this code.** The crab is thin pipe.
+
+## What it does each tick (per game in `games.json`)
+
+1. **Resolve** — read the pool, find the closeable window, load context, call the LLM with the `9.2` directive, write each resolved beat to `solid:<name>` at the next free position (1–8): `{ _: fact, 1: actor, 3: ts, 4: visible_to, 5: resolution }`. Advance the marker at `9.1`. Propagate any names learned this window into `witnessed:<learner>`.
+2. **Consolidate** — when `solid:` reaches `SOLID_CONSOLIDATE_AT` beats, fold the settled (older) beats into one `history:<name>` entry and into the room's description (`spatial:<world>:<room>._._`), then trim `solid:` to the two most recent. Keeps the accumulator shallow and the world remembering.
+
+All writes target **OPEN** blocks (solid/witnessed/history/spatial-body), so no secret is needed. Set `SECRET` only if you lock a target.
+
+## Config — `daemon/games.json`
+
+```json
+{ "games": [ {
+  "name": "beaten-drum",
+  "pool": "pool:beaten-drum-main",
+  "solid": "solid:beaten-drum-main",
+  "history": "history:beaten-drum-main",
+  "spatial": "spatial:thornwood",
+  "room_spindle": "111",
+  "rules": ["rules:nomad", "rules:thornwood"],
+  "window_seconds": 60
+} ] }
+```
+
+Add a game object per room/pool the crab serves. One crab can serve many.
 
 ## Running
 
-### One-shot (testing)
+Put `ANTHROPIC_API_KEY` in `nomad-bsp/.env.local` (gitignored), or pass it inline.
 
+### One-shot (test against the live window)
 ```bash
-BEACH_URL=https://beach.happyseaurchin.com \
-DAEMON_PASSPHRASE="..." \
-FRAME=frame:test-scene \
-ONE_SHOT=1 \
-node daemon/synthesis-daemon.js
+BEACH_URL=https://beach.happyseaurchin.com ONE_SHOT=1 node daemon/synthesis-daemon.js
 ```
+With the two pending Beaten-Drum contributions present, this resolves that window into `solid:beaten-drum-main` and exits — inspect the result, then run the loop.
 
-### Polling loop (development)
-
+### Polling loop
 ```bash
-BEACH_URL=https://beach.happyseaurchin.com \
-DAEMON_PASSPHRASE="..." \
-FRAME=frame:test-scene \
-node daemon/synthesis-daemon.js
+BEACH_URL=https://beach.happyseaurchin.com node daemon/synthesis-daemon.js
 ```
 
 ### Mac mini (always-on)
-
-1. Clone this repo on the Mac mini
-2. Copy `daemon/com.happyseaurchin.nomad-bsp.plist` to `~/Library/LaunchAgents/`
-3. Edit the plist: set absolute paths in `ProgramArguments` and `WorkingDirectory`; set `BEACH_URL` and `DAEMON_PASSPHRASE` in `EnvironmentVariables`
-4. Load: `launchctl load ~/Library/LaunchAgents/com.happyseaurchin.nomad-bsp.plist`
-5. Status: `launchctl list | grep nomad-bsp`
-6. Logs: `tail -F /tmp/nomad-bsp.out /tmp/nomad-bsp.err`
+1. Clone this repo; put `ANTHROPIC_API_KEY` in `.env.local`.
+2. Copy `daemon/com.happyseaurchin.nomad-bsp.plist` to `~/Library/LaunchAgents/`.
+3. Edit absolute paths in `ProgramArguments` / `WorkingDirectory`; fill `ANTHROPIC_API_KEY`.
+4. `launchctl load ~/Library/LaunchAgents/com.happyseaurchin.nomad-bsp.plist`
+5. Status: `launchctl list | grep nomad-bsp` · Logs: `tail -F /tmp/nomad-bsp.out /tmp/nomad-bsp.err`
 
 ## Env vars
 
 | Required | Purpose |
 |---|---|
-| `BEACH_URL` | beach to watch (e.g. https://beach.happyseaurchin.com) |
-| `DAEMON_PASSPHRASE` | secret for daemon writes (used as both `secret` and `new_lock` on the substrate) |
-| `FRAME` | frame block name to watch (e.g. `frame:test-scene`) |
+| `BEACH_URL` | beach to serve (e.g. https://beach.happyseaurchin.com) |
+| `ANTHROPIC_API_KEY` | resolution + consolidation LLM calls |
 
 | Optional | Default | Purpose |
 |---|---|---|
-| `SCENE` | `FRAME` minus `frame:` prefix | scene id used for `solid:` / `history:` / `canon:` siblings |
-| `POLL_INTERVAL_MS` | 5000 | poll cadence in milliseconds |
-| `ONE_SHOT` | unset | if `1`/`true`, runs one iteration and exits |
+| `GAMES_CONFIG` | `daemon/games.json` | path to the games list |
+| `LLM_MODEL` | `claude-sonnet-4-6` | resolution model (drop to `claude-haiku-4-5-20251001` for cost) |
+| `POLL_INTERVAL_MS` | 15000 | poll cadence |
+| `SOLID_CONSOLIDATE_AT` | 7 | beats present before a hard pass runs |
+| `SECRET` | unset | only if a target block is locked |
+| `ONE_SHOT` | unset | run one tick across all games and exit |
 
-## Roadmap to v0.1 — LLM integration
+## Economics (chosen 2026-05-30: both)
 
-The `dummySynthesise()` function is a placeholder. To upgrade to v0.1:
-
-1. Add `ANTHROPIC_API_KEY` env var
-2. Read `canon:<scene>:1.1` for the skill-pack star-ref → resolve to a `skill-pack:<kind>` block
-3. Read the skill-pack block content as the prompt for medium-agent
-4. Call `https://api.anthropic.com/v1/messages` with the prompt + assembled entity context
-5. Replace the concatenation output with the LLM's synthesised text
-
-The wire (read frame → assemble context → call LLM → write solid + history + update entity lanes) stays the same.
+Free tier is **reciprocal player resolution** — a player keeps the table alive by resolving a window they didn't act in (soft for self, medium for others). This crab is the **availability guarantee** when players are too few. A **paywall** tier (`bsp-mcp protocol-paywall`) to fund guaranteed resolution comes later. The crab and reciprocal players are interchangeable non-contributors; first valid resolution wins.
 
 ## Related
 
-- bsp-mcp `docs/beach-crab-ladder.md` — agent ladder this daemon fits (rung 2: active steward)
-- pscale-mcp-server `docs/protocol-grit.md` — daemon contract reference
-- onen-play `docs/NOMAD-Plex0-Implementation.md` — game flow this daemon implements (steps 4-7 specifically)
-- xstream-play `docs/medium-llm-coordination-spec.md` — coordination model (multi-pass convergence, future scope)
+- `pscale-mcp-server/docs/protocol-grit.md` — the GRIT precedent
+- `pscale-mcp-server/scripts/grit-resolver.ts` — the original resolver this ports
+- bsp-mcp `docs/beach-crab-ladder.md` — rung 2 (active steward), where this sits
+- The medium/hard discipline lives at `pool:<name>/9.2` and `9.3` on the beach

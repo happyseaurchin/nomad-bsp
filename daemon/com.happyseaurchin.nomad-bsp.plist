@@ -17,8 +17,11 @@
   Notes:
     - RunAtLoad starts the daemon on login (and when launchctl load is run).
     - KeepAlive restarts the daemon on crash.
-    - The daemon polls the beach every POLL_INTERVAL_MS (default 5s) and
-      synthesises whenever entity liquid is present in FRAME.
+    - The daemon polls the beach every POLL_INTERVAL_MS (default 15s) and
+      resolves any closeable pool window (GRIT) into solid:<name>, then
+      consolidates when solid fills. Games are listed in daemon/games.json.
+    - It writes only OPEN blocks (solid/witnessed/history/spatial-body), so no
+      secret is needed; set SECRET only if you lock a target block.
 -->
 <plist version="1.0">
 <dict>
@@ -38,16 +41,15 @@
     <dict>
         <key>BEACH_URL</key>
         <string>https://beach.happyseaurchin.com</string>
-        <key>DAEMON_PASSPHRASE</key>
-        <string>YOUR_PASSPHRASE_HERE</string>
-        <key>FRAME</key>
-        <string>frame:test-scene</string>
-        <key>POLL_INTERVAL_MS</key>
-        <string>5000</string>
-        <!-- When LLM integration lands: -->
-        <!--
         <key>ANTHROPIC_API_KEY</key>
         <string>sk-ant-...</string>
+        <key>POLL_INTERVAL_MS</key>
+        <string>15000</string>
+        <!-- Optional overrides:
+        <key>GAMES_CONFIG</key>
+        <string>/Users/YOUR_USER/Projects/nomad-bsp/daemon/games.json</string>
+        <key>LLM_MODEL</key>
+        <string>claude-sonnet-4-6</string>
         -->
     </dict>
 
