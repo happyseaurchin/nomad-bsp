@@ -15,9 +15,14 @@ name: nomad-crab
 # for real-time use a self-hosted/launchd runner instead.
 
 on:
-  schedule:
-    - cron: '*/10 * * * *'   # every ~10 minutes
-  workflow_dispatch: {}       # manual "Run workflow" button
+  # DEMOTED 2026-06-05: resolution is now IN-LOOP — the first contributor to touch
+  # a room after a window closes resolves it (bsp-mcp function:thornwood:2), writing
+  # a public event-skeleton to the open room pool. The crab is no longer the
+  # heartbeat OR a fallback. Kept only as an OPTIONAL, manually-run dispassionate
+  # resolver for empty rooms — and its body still follows the OLD
+  # liquid->spines+breadcrumb+tick shape, so it needs a rewrite to the skeleton
+  # model before any real use. Cron disabled; manual dispatch only.
+  workflow_dispatch: {}
 
 # Never let two resolver runs overlap (a long run + the next tick).
 concurrency:
