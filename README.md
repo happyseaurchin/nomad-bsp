@@ -1,4 +1,28 @@
-# nomad-bsp
+# nomad-bsp — DEPRECATED (2026-06-24)
+
+> **This repo is deprecated and is no longer the home of the RPG engine.** It was the
+> June-2026 **GRIT-as-daemon** extraction — a central synthesis daemon plus seedable NOMAD
+> blocks, in a **one-tier** model ("the game system is NOMAD; D&D would be a separate repo").
+> The live engine has since moved to a **daemonless, in-loop, two-tier** model:
+>
+> - **GRIT** — the play-loop — is now a bsp-mcp **sentinel**, `pscale://grit` (canonical,
+>   always-available). Resolution is in-loop in each participant's LLM, gated by the beach's
+>   atomic single-resolution claim (`resolves_window`) — there is **no resolver/compressor daemon**.
+> - **NOMAD** — the resolution rules — is the **swappable** `rules:nomad` block (the live
+>   Thornwood cartridge realizes it; a D&D-style system would be a sibling rules block).
+> - **World** — `spatial:<world>` + `rules:<world>` + cast — is a cartridge (see
+>   `pscale-beach/packs/thornwood`).
+>
+> **Canonical sources now:** `pscale://grit` (the loop) · bsp-mcp
+> `proposals/2026-06-23-grit-extraction.md` (the extraction) · `pscale-beach/packs/thornwood`
+> (the reference world) · `pscale-beach/seeds/library/{grit,rpg}.json` (the library pointers).
+> **Salvaged from here:** `seeds/character-template.json` feeds the parked character-creation
+> work. The `daemon/` and the soft/medium/hard agent prompts are superseded (in-loop play + the
+> character-shell convention replaced them).
+>
+> Everything below is historical — kept for the record, not current.
+
+---
 
 NOMAD tabletop RPG game system as pscale blocks for the **bsp-mcp + federated beach** substrate.
 

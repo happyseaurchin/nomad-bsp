@@ -1,4 +1,12 @@
-# nomad-bsp
+# nomad-bsp — DEPRECATED (2026-06-24)
+
+> **Deprecated. Do not build here.** This was the GRIT-as-daemon, one-tier extraction. The live
+> engine is now daemonless + two-tier: **GRIT** = the in-loop play-loop, bundled as the bsp-mcp
+> sentinel `pscale://grit`; **NOMAD** = the swappable `rules:nomad` block; **World** = a cartridge
+> (`pscale-beach/packs/thornwood`). Resolution is in-loop, gated by the beach's atomic
+> `resolves_window` claim — no daemon. Canonical: `pscale://grit`, bsp-mcp
+> `proposals/2026-06-23-grit-extraction.md`. Salvage: `seeds/character-template.json` →
+> the parked character-creation work. History below.
 
 ## To the next instance
 
